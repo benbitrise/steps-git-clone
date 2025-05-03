@@ -62,7 +62,7 @@ func (r DefaultRunner) Run(c *command.Model) error {
 
 // RunWithRetry ...
 func (r DefaultRunner) RunWithRetry(getCommand func() *command.Model, maxRetryAttempts int, retryDelaySeconds int) error {
-	return retry.Times(uint(maxRetryAttempts)).Wait(time.Duration(retryDelaySeconds)).Try(func(attempt uint) error {
+	return retry.Times(uint(maxRetryAttempts)).Wait(time.Duration(retryDelaySeconds) * time.Second).Try(func(attempt uint) error {
 		if attempt > 0 {
 			log.Warnf("Retrying...")
 		}
