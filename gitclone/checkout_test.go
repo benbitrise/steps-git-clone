@@ -403,11 +403,13 @@ func Test_idealDefaultCloneDepth(t *testing.T) {
 
 func Test_selectFetchOptions(t *testing.T) {
 	type args struct {
-		method          CheckoutMethod
-		cloneDepth      int
-		fetchTags       bool
-		fetchSubmodules bool
-		filterTree      bool
+		method            CheckoutMethod
+		cloneDepth        int
+		fetchTags         bool
+		fetchSubmodules   bool
+		filterTree        bool
+		retryAttempts     int
+		retryDelaySeconds int
 	}
 	tests := []struct {
 		name string
@@ -417,58 +419,133 @@ func Test_selectFetchOptions(t *testing.T) {
 		{
 			name: "default depth setting",
 			args: args{
-				method:          CheckoutCommitMethod,
-				cloneDepth:      0,
-				fetchTags:       false,
-				fetchSubmodules: false,
-				filterTree:      false,
+				method:            CheckoutCommitMethod,
+				cloneDepth:        0,
+				fetchTags:         false,
+				fetchSubmodules:   false,
+				filterTree:        false,
+				retryAttempts:     0,
+				retryDelaySeconds: 5,
 			},
 			want: fetchOptions{
-				tags:            false,
-				limitDepth:      true,
-				depth:           1,
-				fetchSubmodules: false,
-				filterTree:      false,
+				tags:              false,
+				limitDepth:        true,
+				depth:             1,
+				fetchSubmodules:   false,
+				filterTree:        false,
+				retryAttempts:     0,
+				retryDelaySeconds: 5,
 			},
 		},
 		{
 			name: "custom depth setting",
 			args: args{
-				method:          CheckoutPRMergeBranchMethod,
-				cloneDepth:      115,
-				fetchTags:       false,
-				fetchSubmodules: false,
-				filterTree:      false,
+				method:            CheckoutPRMergeBranchMethod,
+				cloneDepth:        115,
+				fetchTags:         false,
+				fetchSubmodules:   false,
+				filterTree:        false,
+				retryAttempts:     0,
+				retryDelaySeconds: 5,
 			},
 			want: fetchOptions{
-				tags:            false,
-				limitDepth:      true,
-				depth:           115,
-				fetchSubmodules: false,
-				filterTree:      false,
+				tags:              false,
+				limitDepth:        true,
+				depth:             115,
+				fetchSubmodules:   false,
+				filterTree:        false,
+				retryAttempts:     0,
+				retryDelaySeconds: 5,
 			},
 		},
 		{
 			name: "disable depth limit",
 			args: args{
-				method:          CheckoutCommitMethod,
-				cloneDepth:      -1,
-				fetchTags:       false,
-				fetchSubmodules: false,
-				filterTree:      false,
+				method:            CheckoutCommitMethod,
+				cloneDepth:        -1,
+				fetchTags:         false,
+				fetchSubmodules:   false,
+				filterTree:        false,
+				retryAttempts:     0,
+				retryDelaySeconds: 5,
 			},
 			want: fetchOptions{
-				tags:            false,
-				limitDepth:      false,
-				depth:           -1,
-				fetchSubmodules: false,
-				filterTree:      false,
+				tags:              false,
+				limitDepth:        false,
+				depth:             -1,
+				fetchSubmodules:   false,
+				filterTree:        false,
+				retryAttempts:     0,
+				retryDelaySeconds: 5,
+			},
+		},
+		{
+			name: "zero retryDelay",
+			args: args{
+				method:            CheckoutCommitMethod,
+				cloneDepth:        -1,
+				fetchTags:         false,
+				fetchSubmodules:   false,
+				filterTree:        false,
+				retryAttempts:     0,
+				retryDelaySeconds: 0,
+			},
+			want: fetchOptions{
+				tags:              false,
+				limitDepth:        false,
+				depth:             -1,
+				fetchSubmodules:   false,
+				filterTree:        false,
+				retryAttempts:     0,
+				retryDelaySeconds: 5,
+			},
+		},
+		{
+			name: "negative retryCount",
+			args: args{
+				method:            CheckoutCommitMethod,
+				cloneDepth:        -1,
+				fetchTags:         false,
+				fetchSubmodules:   false,
+				filterTree:        false,
+				retryAttempts:     -1,
+				retryDelaySeconds: 5,
+			},
+			want: fetchOptions{
+				tags:              false,
+				limitDepth:        false,
+				depth:             -1,
+				fetchSubmodules:   false,
+				filterTree:        false,
+				retryAttempts:     2,
+				retryDelaySeconds: 5,
+			},
+		},
+		{
+			name: "custom valid retry settings",
+			args: args{
+				method:            CheckoutCommitMethod,
+				cloneDepth:        -1,
+				fetchTags:         false,
+				fetchSubmodules:   false,
+				filterTree:        false,
+				retryAttempts:     3,
+				retryDelaySeconds: 1,
+			},
+			want: fetchOptions{
+				tags:              false,
+				limitDepth:        false,
+				depth:             -1,
+				fetchSubmodules:   false,
+				filterTree:        false,
+				retryAttempts:     3,
+				retryDelaySeconds: 1,
 			},
 		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			assert.Equalf(t, tt.want, selectFetchOptions(tt.args.method, tt.args.cloneDepth, tt.args.fetchTags, tt.args.fetchSubmodules, tt.args.filterTree), "selectFetchOptions(%v, %v, %v, %v, %v)", tt.args.method, tt.args.cloneDepth, tt.args.fetchTags, tt.args.fetchSubmodules, tt.args.filterTree)
+			assert.Equalf(t, tt.want, selectFetchOptions(tt.args.method, tt.args.cloneDepth, tt.args.fetchTags, tt.args.fetchSubmodules, tt.args.filterTree, tt.args.retryAttempts, tt.args.retryDelaySeconds), "selectFetchOptions(%v, %v, %v, %v, %v)", tt.args.method, tt.args.cloneDepth, tt.args.fetchTags, tt.args.fetchSubmodules, tt.args.filterTree)
 		})
 	}
 }

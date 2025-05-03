@@ -42,6 +42,9 @@ type Input struct {
 	ResetRepository bool   `env:"reset_repository,opt[Yes,No]"`
 	BuildURL        string `env:"build_url"`
 	BuildAPIToken   string `env:"build_api_token"`
+
+	MaxRetryAttempts  int `env:"max_retry_attempts"`
+	RetryDelaySeconds int `env:"retry_delay_seconds"`
 }
 
 // Config is the git clone step configuration
@@ -179,5 +182,7 @@ func convertConfig(config Config) gitclone.Config {
 		PRUnverifiedMergeRef:  config.PRUnverifiedMergeBranch,
 		PRHeadBranch:          config.PRHeadBranch,
 		ResetRepository:       config.ResetRepository,
+		MaxRetryAttempts:      config.MaxRetryAttempts,
+		RetryDelaySeconds:     config.RetryDelaySeconds,
 	}
 }

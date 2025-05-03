@@ -253,7 +253,7 @@ func createCheckoutStrategy(checkoutMethod CheckoutMethod, cfg Config, patchFile
 				fallbackCheckout: func(gitCmd git.Git) error {
 					log.Warnf("Using manual merge strategy with PR source branch")
 
-					manualMergeFallbackFetchOpts := selectFetchOptions(CheckoutPRManualMergeMethod, cfg.CloneDepth, cfg.FetchTags, cfg.UpdateSubmodules, len(cfg.SparseDirectories) != 0)
+					manualMergeFallbackFetchOpts := selectFetchOptions(CheckoutPRManualMergeMethod, cfg.CloneDepth, cfg.FetchTags, cfg.UpdateSubmodules, len(cfg.SparseDirectories) != 0, cfg.MaxRetryAttempts, cfg.RetryDelaySeconds)
 					manualMergeFallbackFallback := selectFallbacks(CheckoutPRManualMergeMethod, manualMergeFallbackFetchOpts)
 
 					prRepositoryURL := ""
@@ -333,18 +333,35 @@ func createCheckoutStrategy(checkoutMethod CheckoutMethod, cfg Config, patchFile
 	}
 }
 
-func selectFetchOptions(method CheckoutMethod, cloneDepth int, fetchTags, fetchSubmodules bool, filterTree bool) fetchOptions {
+func selectFetchOptions(method CheckoutMethod, cloneDepth int, fetchTags, fetchSubmodules bool, filterTree bool, inputRetryAttempts int, inputRetryDelaySeconds int) fetchOptions {
 	// If cloneDepth is 0, that means the user did not set a value for it,
 	// so we will determine the correct value based on the checkout method.
 	if cloneDepth == 0 {
 		cloneDepth = idealDefaultCloneDepth(method)
 	}
 
+	maxAttempts := 0
+	if inputRetryAttempts >= 0 {
+		maxAttempts = inputRetryAttempts
+	} else {
+		log.Warnf("max_retry_attempts is invalid (must be >= 0), falling back to default value of 2")
+		maxAttempts = 2
+	}
+
+	delaySeconds := 5
+	if inputRetryDelaySeconds >= 1 {
+		delaySeconds = inputRetryDelaySeconds
+	} else {
+		log.Warnf("retry_delay_seconds is invalid (must be >= 1), falling back to default value of 5")
+	}
+
 	opts := fetchOptions{
-		limitDepth:      cloneDepth > 0,
-		depth:           cloneDepth,
-		tags:            fetchTags,
-		fetchSubmodules: fetchSubmodules,
+		limitDepth:        cloneDepth > 0,
+		depth:             cloneDepth,
+		tags:              fetchTags,
+		fetchSubmodules:   fetchSubmodules,
+		retryAttempts:     maxAttempts,
+		retryDelaySeconds: delaySeconds,
 	}
 	opts = selectFilterTreeFetchOption(method, opts, filterTree)
 
@@ -395,8 +412,10 @@ func selectFallbacks(method CheckoutMethod, fetchOpts fetchOptions) fallbackRetr
 	}
 
 	unshallowFetchOpts := unshallowFetchOptions{
-		tags:            fetchOpts.tags,
-		fetchSubmodules: fetchOpts.fetchSubmodules,
+		tags:              fetchOpts.tags,
+		fetchSubmodules:   fetchOpts.fetchSubmodules,
+		retryAttempts:     fetchOpts.retryAttempts,
+		retryDelaySeconds: fetchOpts.retryDelaySeconds,
 	}
 
 	switch method {

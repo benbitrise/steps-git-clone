@@ -25,7 +25,9 @@ type fetchOptions struct {
 	fetchSubmodules bool
 	// Sets `--filter=tree:0` flag
 	// More info: https://github.blog/2020-12-21-get-up-to-speed-with-partial-clone-and-shallow-clone/#user-content-treeless-clones
-	filterTree bool
+	filterTree        bool
+	retryAttempts     int
+	retryDelaySeconds int
 }
 
 // TODO
@@ -69,7 +71,7 @@ func fetch(gitCmd git.Git, remote string, ref string, options fetchOptions) erro
 
 	if err := runner.RunWithRetry(func() *command.Model {
 		return gitCmd.Fetch(opts...)
-	}); err != nil {
+	}, options.retryAttempts, options.retryDelaySeconds); err != nil {
 		return handleCheckoutError(
 			listBranches(gitCmd),
 			fetchFailedTag,
@@ -105,7 +107,7 @@ func forceCheckoutRemoteBranch(gitCmd git.Git, remote string, branchRef string, 
 		wErr := fmt.Errorf("fetch branch %s: %w", branchRef, err)
 		return fmt.Errorf("%v: %w", wErr, errors.New("please make sure the branch still exists"))
 	}
-	
+
 	remoteBranch := fmt.Sprintf("%s/%s", remote, branch)
 	// -B: create the branch if it doesn't exist, reset if it does
 	// The latter is important in persistent environments because shallow-fetching only fetches 1 commit,

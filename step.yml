@@ -227,6 +227,28 @@ inputs:
     - "No"
     - "Yes"
 
+# Retry Options
+
+- max_retry_attempts: "2"
+  opts:
+    category: Retry Options
+    title: Maximum retry attempts
+    summary: Maximum number of retry attempts for git operations
+    description: |-
+      The maximum number of retry attempts for git operations that may fail due to transient issues.
+      Default value is 2 (meaning a maximum of 3 total attempts will be made).
+    is_required: false
+
+- retry_delay_seconds: "5"
+  opts:
+    category: Retry Options
+    title: Retry delay in seconds
+    summary: Delay in seconds between retry attempts
+    description: |-
+      The delay in seconds between retry attempts for git operations.
+      Default value is 5 seconds.
+    is_required: false
+
 - build_url: $BITRISE_BUILD_URL
   opts:
     category: Debug

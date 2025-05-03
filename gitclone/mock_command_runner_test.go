@@ -59,7 +59,7 @@ func (m *MockRunner) GivenRunFailsForCommand(cmdString string, times int) *MockR
 }
 
 // RunWithRetry ...
-func (m *MockRunner) RunWithRetry(getCommand func() *command.Model) error {
+func (m *MockRunner) RunWithRetry(getCommand func() *command.Model, maxRetryAttempts int, retryDelaySeconds int) error {
 	args := m.Called(getCommand)
 	return args.Error(0)
 }

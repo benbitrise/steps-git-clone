@@ -41,6 +41,9 @@ type Config struct {
 	PRHeadBranch          string
 
 	ResetRepository bool
+
+	MaxRetryAttempts  int
+	RetryDelaySeconds int
 }
 
 type GitCloner struct {
@@ -177,7 +180,7 @@ func (g GitCloner) checkoutState(gitCmd git.Git, cfg Config) (strategy checkoutS
 	checkoutStartTime := time.Now()
 	checkoutMethod, diffFile := selectCheckoutMethod(cfg, g.patchSource, g.mergeRefChecker)
 
-	fetchOpts := selectFetchOptions(checkoutMethod, cfg.CloneDepth, cfg.FetchTags, cfg.UpdateSubmodules, len(cfg.SparseDirectories) != 0)
+	fetchOpts := selectFetchOptions(checkoutMethod, cfg.CloneDepth, cfg.FetchTags, cfg.UpdateSubmodules, len(cfg.SparseDirectories) != 0, cfg.MaxRetryAttempts, cfg.RetryDelaySeconds)
 
 	checkoutStrategy, err := createCheckoutStrategy(checkoutMethod, cfg, diffFile)
 	if err != nil {

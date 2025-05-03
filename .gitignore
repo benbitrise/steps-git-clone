@@ -3,3 +3,5 @@ _tmp
 go/bin/
 go/pkg/
 .idea
+
+**/.claude/settings.local.json

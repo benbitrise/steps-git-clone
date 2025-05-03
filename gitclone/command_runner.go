@@ -7,6 +7,7 @@ import (
 	"io"
 	"os"
 	"strings"
+	"time"
 
 	"github.com/bitrise-io/go-utils/command"
 	"github.com/bitrise-io/go-utils/errorutil"
@@ -18,7 +19,7 @@ import (
 type CommandRunner interface {
 	RunForOutput(c *command.Model) (string, error)
 	Run(c *command.Model) error
-	RunWithRetry(getCommmand func() *command.Model) error
+	RunWithRetry(getCommmand func() *command.Model, maxRetryAttemps int, retryDelaySeconds int) error
 }
 
 // DefaultRunner ...
@@ -60,8 +61,8 @@ func (r DefaultRunner) Run(c *command.Model) error {
 }
 
 // RunWithRetry ...
-func (r DefaultRunner) RunWithRetry(getCommand func() *command.Model) error {
-	return retry.Times(2).Wait(5).Try(func(attempt uint) error {
+func (r DefaultRunner) RunWithRetry(getCommand func() *command.Model, maxRetryAttempts int, retryDelaySeconds int) error {
+	return retry.Times(uint(maxRetryAttempts)).Wait(time.Duration(retryDelaySeconds)).Try(func(attempt uint) error {
 		if attempt > 0 {
 			log.Warnf("Retrying...")
 		}

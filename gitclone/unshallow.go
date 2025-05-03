@@ -16,7 +16,9 @@ type unshallowFetchOptions struct {
 	tags bool
 	// Sets '--no-recurse-submodules' flag
 	// More info: https://git-scm.com/docs/git-fetch#Documentation/git-fetch.txt---no-recurse-submodules
-	fetchSubmodules bool
+	fetchSubmodules   bool
+	retryAttempts     int
+	retryDelaySeconds int
 }
 
 type fallbackRetry interface {
@@ -60,7 +62,7 @@ func unshallowFetch(gitCmd git.Git, traits unshallowFetchOptions) error {
 
 	if err := runner.RunWithRetry(func() *command.Model {
 		return gitCmd.Fetch(opts...)
-	}); err != nil {
+	}, traits.retryAttempts, traits.retryDelaySeconds); err != nil {
 		return fmt.Errorf("fetch failed: %v", err)
 	}
 	return nil
