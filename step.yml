@@ -33,6 +33,7 @@ source_code_url: https://github.com/bitrise-steplib/steps-git-clone
 support_url: https://github.com/bitrise-steplib/steps-git-clone/issues
 type_tags:
 - utility
+- security
 is_requires_admin_user: false
 is_always_run: false
 is_skippable: false
